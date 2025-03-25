@@ -45,3 +45,29 @@ runs %>%
   arrange(desc(wins))
 ```
 
+```{r}
+hist(runs$declared_weight)
+```
+
+```{r}
+hist(runs$actual_weight)
+```
+```{r}
+hist(runs$finish_time)
+```
+
+```{r}
+horse_type_counts <- table(runs$horse_type)
+barplot(horse_type_counts)
+```
+```{r}
+cor(runs$result,runs$win_odds)
+```
+```{r}
+cor(runs$horse_age, runs$result)
+```
+```{r}
+hist(runs$horse_age)
+```
+
+
