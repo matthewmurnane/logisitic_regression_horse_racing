@@ -27,4 +27,10 @@ unique(runs$jockey_id)
 runs$trainer_id <- factor(runs$trainer_id)
 unique(runs$trainer_id)
 ```
+```{r}
+runs %>% 
+  group_by(horse_id) %>% 
+  summarise(wins=sum(won)) %>% 
+  arrange(desc(wins))
+```
 
