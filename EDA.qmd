@@ -1,0 +1,30 @@
+---
+title: "EDA"
+format: pdf
+---
+
+```{r include=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(readr)
+```
+
+```{r}
+runs <- read_csv("runs.csv")
+```
+
+```{r}
+glimpse(runs)
+```
+```{r}
+runs$horse_id <- factor(runs$horse_id)
+unique(runs$horse_id)
+```
+```{r}
+runs$jockey_id <- factor(runs$jockey_id)
+unique(runs$jockey_id)
+```
+```{r}
+runs$trainer_id <- factor(runs$trainer_id)
+unique(runs$trainer_id)
+```
+
