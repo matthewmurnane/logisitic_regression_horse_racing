@@ -33,4 +33,15 @@ runs %>%
   summarise(wins=sum(won)) %>% 
   arrange(desc(wins))
 ```
+```{r}
+runs$race_id <- factor(runs$race_id)
+unique(runs$race_id)
+```
+ties exist
+```{r}
+runs %>% 
+  group_by(race_id) %>% 
+  summarise(wins=sum(won)) %>% 
+  arrange(desc(wins))
+```
 
