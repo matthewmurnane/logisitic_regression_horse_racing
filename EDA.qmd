@@ -5,69 +5,38 @@ format: pdf
 
 ```{r include=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
-library(readr)
+library(gridExtra)
+library(ggthemes)
 ```
 
-```{r}
-runs <- read_csv("runs.csv")
-```
 
 ```{r}
-glimpse(runs)
+#Distribution of winning
+whole %>% 
+  ggplot()+
+  geom_bar(aes(x=won),
+           fill="black")+
+  ggtitle("Distribitions of Won")+
+  xlab("Won")+
+  ylab("Count")+
+  theme_few()
 ```
-```{r}
-runs$horse_id <- factor(runs$horse_id)
-unique(runs$horse_id)
-```
-```{r}
-runs$jockey_id <- factor(runs$jockey_id)
-unique(runs$jockey_id)
-```
-```{r}
-runs$trainer_id <- factor(runs$trainer_id)
-unique(runs$trainer_id)
-```
-```{r}
-runs %>% 
-  group_by(horse_id) %>% 
-  summarise(wins=sum(won)) %>% 
-  arrange(desc(wins))
-```
-```{r}
-runs$race_id <- factor(runs$race_id)
-unique(runs$race_id)
-```
-ties exist
-```{r}
-runs %>% 
-  group_by(race_id) %>% 
-  summarise(wins=sum(won)) %>% 
-  arrange(desc(wins))
-```
+```{r warning=FALSE, message=FALSE}
+#Distribution of Horse weight and jockey weight
+ph <- whole %>% 
+  ggplot()+
+  geom_histogram(aes(x=declared_weight))+
+  theme_few()+
+  ggtitle("Declared Weight of Horse and Jockey in lbs")+
+  xlab("")
 
-```{r}
-hist(runs$declared_weight)
-```
+pj <- whole %>% 
+  ggplot()+
+  geom_histogram(aes(x=actual_weight))+
+  theme_few()+
+  ggtitle("Actual Weight Carried by Horse in lbs")+
+  xlab("")
 
-```{r}
-hist(runs$actual_weight)
+grid.arrange(ph,pj)
 ```
-```{r}
-hist(runs$finish_time)
-```
-
-```{r}
-horse_type_counts <- table(runs$horse_type)
-barplot(horse_type_counts)
-```
-```{r}
-cor(runs$result,runs$win_odds)
-```
-```{r}
-cor(runs$horse_age, runs$result)
-```
-```{r}
-hist(runs$horse_age)
-```
-
 
