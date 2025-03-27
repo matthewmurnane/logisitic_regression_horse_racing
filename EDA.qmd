@@ -98,3 +98,17 @@ races %>%
   theme_few()
 ```
 
+
+```{r}
+races %>% 
+  ggplot()+
+  geom_histogram(aes(x=prize))
+```
+
+```{r}
+races %>% 
+  ggplot()+
+  geom_histogram(aes(x=win_dividend1))
+```
+
+

@@ -6,4 +6,5 @@ Models
 
 3. Model for betting to win (this means we can only use variables we know before the race starts)
 
-4. Model for betting to maximize (this means we can only use variables we know before the race starts)
+4. Model for betting to maximize profits (this means we can only use variables we know before the race starts)
+    * maxmizing winning_dividend -> can filter whole by won to get data on winning horse.

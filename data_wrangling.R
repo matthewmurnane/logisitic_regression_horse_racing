@@ -1,5 +1,5 @@
 
-library(dplyr)
+library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(readr)
@@ -8,8 +8,10 @@ library(readr)
 runs <- read_csv("runs.csv")
 races <- read_csv("races.csv")
 
-whole <- inner_join(runs, races, by="race_id")
 
+# Join --------------------------------------------------------------------
+
+whole <- inner_join(runs, races, by="race_id")
 
 # Glimpse -----------------------------------------------------------------
 
@@ -41,6 +43,7 @@ for (col in c(place_cols, position_cols)) {
 }
 
 glimpse(whole)
+
 
 # Sample Data -------------------------------------------------------------
 
