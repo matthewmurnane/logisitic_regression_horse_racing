@@ -73,7 +73,8 @@ grid.arrange(p1,p2)
 # Rare Events -------------------------------------------------------------
 
 horses %>% 
-  summarise(proportion_wins = sum(won)/n())
+  summarise(total_wins = sum(won),
+            proportion_wins = sum(won)/n())
 
 sum(horses$won) / (ncol(whole)-8) > 15
 
