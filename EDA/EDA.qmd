@@ -1,0 +1,186 @@
+---
+title: "EDA"
+format: pdf
+---
+
+```{r setup, include=FALSE}
+# This chunk prevents code from being shown and suppresses messages and warnings globally
+knitr::opts_chunk$set(
+  echo = FALSE,        # Hide code in output
+  warning = FALSE,     # Suppress warnings
+  message = FALSE      # Suppress messages
+)
+```
+
+```{r include=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(gridExtra)
+library(ggthemes)
+library(forcats)
+library(knitr)
+library(kableExtra)
+```
+
+```{r include=FALSE, warning=FALSE, message=FALSE}
+#data wrangling
+# Import Data -------------------------------------------------------------
+
+runs <- read_csv("runs.csv")
+races <- read_csv("races.csv")
+
+
+# Join --------------------------------------------------------------------
+
+whole <- inner_join(runs, races, by="race_id")
+
+# Changing Data Classes ---------------------------------------------------
+
+whole$race_id <- as.character(whole$race_id)
+whole$horse_no <- as.character(whole$horse_no)
+whole$horse_id <- as.character(whole$horse_id)
+whole$won <- as.logical(whole$won)
+whole$horse_ratings <- as.character(whole$horse_ratings)
+whole$draw <- as.character(whole$draw)
+whole$jockey_id <- as.character(whole$jockey_id)
+whole$trainer_id <- as.character(whole$trainer_id)
+whole$race_no <- as.character(whole$race_no)
+whole$surface <- as.character(whole$surface)
+whole$race_class <- as.character(whole$race_class)
+whole$time7 <- as.numeric(whole$time7)
+whole$sec_time7 <- as.numeric(whole$sec_time7)
+whole$distance <- as.character(whole$distance)
+whole$result <- as.character(whole$result)
+
+position_cols <- paste0("position_sec", 1:6)
+place_cols <- paste0("place_combination", 1:4)
+wincomb_cols <- paste0("win_combination",1:2)
+
+for (col in c(place_cols, position_cols)) {
+  whole[[col]] <- as.character(whole[[col]])
+}
+```
+
+
+
+```{r}
+#Distribution of winning
+whole %>% 
+  ggplot()+
+  geom_bar(aes(x=won),
+           fill="black")+
+  ggtitle("Distribitions of Won")+
+  xlab("Won")+
+  ylab("Count")+
+  theme_few()
+```
+```{r warning=FALSE, message=FALSE}
+#Distribution of Horse weight and jockey weight
+ph <- whole %>% 
+  ggplot()+
+  geom_histogram(aes(x=declared_weight),
+                 fill="black",
+                 color="white")+
+  theme_few()+
+  ggtitle("Declared Weight of Horse and Jockey in lbs")+
+  xlab("")
+
+pj <- whole %>% 
+  ggplot()+
+  geom_histogram(aes(x=actual_weight),
+                 fill="black",
+                 color="white")+
+  theme_few()+
+  ggtitle("Actual Weight Carried by Horse in lbs")+
+  xlab("")
+
+grid.arrange(ph,pj)
+```
+```{r}
+whole %>% 
+  ggplot()+
+  geom_bar(aes(x=distance))+
+  theme_few()+
+  ggtitle("Distribution of Race Distance")+
+  xlab("distance in meters")
+```
+```{r}
+summary(whole$horse_rating)
+quantile(whole$horse_rating, probs = c(.1, .2, .8, .9))
+```
+```{r warning=FALSE, message=FALSE}
+whole %>% 
+  ggplot()+
+  geom_histogram(aes(x=win_odds),
+                 color="white",
+                 fill="black")+
+  theme_few()+
+  ggtitle("Distribution of Win Odds")
+```
+```{r}
+whole %>% 
+  ggplot()+
+  geom_boxplot(aes(x=win_odds,
+                   y=won))+
+  theme_few()+
+  ggtitle("Distribution of Win Odds per Winning")
+```
+
+```{r}
+whole %>% 
+  ggplot() +
+  geom_bar(aes(x = fct_infreq(horse_country))) +
+  theme_few() +
+  xlab("Horse Country") + 
+  ylab("Count")+
+  ggtitle("Distribution of Horses by Country")+
+  coord_flip()
+```
+
+```{r}
+whole %>% 
+  select(won, draw)%>%
+  filter(draw!=15) %>% 
+  group_by(draw) %>% 
+  summarise(win = sum(won)/n(),
+            lose = 1-win) %>% 
+  pivot_longer(cols = c(win, lose)) %>% 
+  ggplot()+
+  geom_col(aes(x = name,
+               y = value))+
+  facet_wrap(~draw)+
+  theme_few()+
+  xlab("")+
+  ylab("proportion")+
+  ggtitle("Proportion of Wins and Losses per Draw",
+          subtitle = "Won and Draw are independent")
+```
+
+
+```{r warning=FALSE, message=FALSE}
+races %>% 
+  ggplot()+
+  geom_histogram(aes(x=win_dividend1),
+                 binwidth = 20,
+                 fill="black",
+                 color="white")+
+  theme_few()+
+  xlim(0,2000)+
+  xlab("Payout")+
+  ggtitle("Distribution of First Place Dividend",
+          subtitle = "The maximum payout was 2687.50")
+```
+\newpage
+
+```{r}
+level_counts <- data.frame(levels=sapply(sapply(whole[,sapply(whole, is.character)], unique), length))
+
+level_counts %>% 
+  arrange(desc(levels)) %>% 
+  kable(
+    format = "latex",
+    col.names = c("Variable", "Number of Levels"),
+    caption = "Number of Levels per Character Variable"
+  )
+```
+
+
