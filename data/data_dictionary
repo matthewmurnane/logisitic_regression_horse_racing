@@ -22,7 +22,7 @@ horse_type - sex of the horse, e.g. 'Gelding', 'Mare', 'Horse', 'Rig', 'Colt', '
 
 horse_rating - rating number assigned by HKJC to this horse at the time of the race
 
-horse_gear - string representing the gear carried by the horse in the race. An explanation of the codes used may be found on the HKJC website.
+horse_gear - string representing the gear carried by the horse in the race. An explanation of the codes used may be found on the HKJC website
 
 declared_weight - declared weight of the horse and jockey, in lbs
 

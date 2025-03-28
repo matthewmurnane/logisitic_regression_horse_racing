@@ -85,10 +85,9 @@ The average number of horses per race is `r round(avg_no_horses_per_race, 2)`. O
 
 \newpage
 
-
 ```{r warning=FALSE, message=FALSE}
 #Distribution of Horse weight and jockey weight
-ph <- whole %>% 
+pd <- whole %>% 
   ggplot()+
   geom_histogram(aes(x=declared_weight),
                  fill="black",
@@ -106,20 +105,43 @@ pj <- whole %>%
   ggtitle("Actual Weight Carried by Horse in lbs")+
   xlab("")
 
-grid.arrange(ph,pj)
+ph <- whole %>% 
+  mutate(horse_weight = declared_weight-actual_weight) %>% 
+  ggplot()+
+  geom_histogram(aes(x=horse_weight),
+                 fill="black",
+                 color="white")+
+  theme_few()+
+  ggtitle("Weight of Horse",
+          subtitle = "Found by subtracting declared_weight by actual_weight")+
+  xlab("")
+
+grid.arrange(pd, pj, ncol=1)
+
+ph
 ```
+
+\newpage
+
+
 ```{r}
 whole %>% 
   ggplot()+
-  geom_bar(aes(x=distance))+
+  geom_bar(aes(x=distance),
+           fill="black",
+           weight="white")+
   theme_few()+
   ggtitle("Distribution of Race Distance")+
   xlab("distance in meters")
 ```
+#### Percentiles For Horse Ratings
 ```{r}
-summary(whole$horse_rating)
-quantile(whole$horse_rating, probs = c(.1, .2, .8, .9))
+quantile(whole$horse_rating, probs = c(.1, .15, .2, .5, .8, .85, .9))
 ```
+About 60% of horses have a rating of 60
+
+\newpage
+
 ```{r warning=FALSE, message=FALSE}
 whole %>% 
   ggplot()+
@@ -128,20 +150,35 @@ whole %>%
                  fill="black")+
   theme_few()+
   ggtitle("Distribution of Win Odds")
+
 ```
 ```{r}
+q3_win_odds <- whole %>%
+  filter(won == TRUE) %>%
+  summarize(Q3 = quantile(win_odds, 0.75, na.rm = TRUE)) %>%
+  pull(Q3)
+
 whole %>% 
   ggplot()+
   geom_boxplot(aes(x=win_odds,
                    y=won))+
+  geom_vline(xintercept = q3_win_odds,
+             linetype = "dashed",
+             color = "red",
+             size=1)+
   theme_few()+
-  ggtitle("Distribution of Win Odds per Winning")
+  ggtitle("Distribution of Win Odds per Winning",
+          subtitle = "75% of winning horses have win odds of less than 10:1")
 ```
+
+\newpage
 
 ```{r}
 whole %>% 
   ggplot() +
-  geom_bar(aes(x = fct_infreq(horse_country))) +
+  geom_bar(aes(x = fct_infreq(horse_country)),
+           fill="black",
+           color="white") +
   theme_few() +
   xlab("Horse Country") + 
   ylab("Count")+
@@ -159,15 +196,18 @@ whole %>%
   pivot_longer(cols = c(win, lose)) %>% 
   ggplot()+
   geom_col(aes(x = name,
-               y = value))+
-  facet_wrap(~draw)+
+               y = value),
+           fill="black",
+           color="white")+
+  facet_wrap(~as.numeric(draw))+
   theme_few()+
   xlab("")+
   ylab("proportion")+
   ggtitle("Proportion of Wins and Losses per Draw",
-          subtitle = "Won and Draw are independent")
+          subtitle = "winning and starting position are independent")
 ```
 
+\newpage
 
 ```{r warning=FALSE, message=FALSE}
 races %>% 
@@ -181,6 +221,19 @@ races %>%
   xlab("Payout")+
   ggtitle("Distribution of First Place Dividend",
           subtitle = "The maximum payout was 2687.50")
+```
+```{r}
+model <- lm(win_dividend1 ~ win_odds, data = whole %>% filter(won == 1, win_odds <98))
+
+whole %>% 
+  filter(won==1) %>% 
+  ggplot()+
+  geom_point(aes(y=win_dividend1,
+                 x=win_odds),
+             size=1)+
+  theme_few()+
+  ggtitle("As Win Odds increase by 1, payout increases by 10",
+          subtitle = "Per a SLR model that excludes win odds greater than 98")
 ```
 \newpage
 
