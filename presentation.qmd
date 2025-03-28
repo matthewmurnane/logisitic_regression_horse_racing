@@ -1,0 +1,87 @@
+---
+title: "Logistic Regression: Horse Racing"
+author: "Kyubin Im, Matthew Murnane, and Ethan Newcomb"
+format: revealjs
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(readr)
+library(ggthemes)
+library(forcats)
+library(knitr)
+library(kableExtra)
+```
+
+```{r}
+runs <- read_csv("runs.csv")
+races <- read_csv("races.csv")
+
+
+# Join --------------------------------------------------------------------
+
+whole <- inner_join(runs, races, by="race_id")
+
+# Changing Data Classes ---------------------------------------------------
+
+whole$race_id <- as.character(whole$race_id)
+whole$horse_no <- as.character(whole$horse_no)
+whole$horse_id <- as.character(whole$horse_id)
+whole$won <- as.logical(whole$won)
+whole$horse_ratings <- as.character(whole$horse_ratings)
+whole$draw <- as.character(whole$draw)
+whole$jockey_id <- as.character(whole$jockey_id)
+whole$trainer_id <- as.character(whole$trainer_id)
+whole$race_no <- as.character(whole$race_no)
+whole$surface <- as.character(whole$surface)
+whole$race_class <- as.character(whole$race_class)
+whole$time7 <- as.numeric(whole$time7)
+whole$sec_time7 <- as.numeric(whole$sec_time7)
+whole$distance <- as.character(whole$distance)
+whole$result <- as.character(whole$result)
+
+position_cols <- paste0("position_sec", 1:6)
+place_cols <- paste0("place_combination", 1:4)
+wincomb_cols <- paste0("win_combination",1:2)
+
+for (col in c(place_cols, position_cols)) {
+  whole[[col]] <- as.character(whole[[col]])
+}
+```
+
+## The Data
+
+- A horse per race is the observation
+- 79,447 rows and 73 columns
+
+```{r}
+kable(head(whole)) %>%
+  kable_styling(font_size = 15, full_width = FALSE)
+```
+
+## Some Variables
+
+- `horse_country`: country of origin of this horse
+- `declared_weight`: declared weight of the horse and jockey, in lbs
+- `draw`: post position number of the horse in this race
+- `position_sec`[i]:  position of this horse (ranking) in $i^{th}$ section of the race
+- `time`[i]: time taken by the horse to pass through the $i^{th}$ section of the race (sec)
+- `win_odds`: win odds for this horse at start of race
+- `jockey_id`: unique identifier of the jockey riding the horse in this race
+
+## Levels of Categorical Variables
+
+```{r}
+level_counts <- data.frame(levels=sapply(sapply(whole[,sapply(whole, is.character)], unique), length))
+
+level_counts %>% 
+  arrange(desc(levels)) %>% 
+  kable(
+    format = "html",
+    col.names = c("Variable", "Number of Levels")) %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "600px") 
+```
+
