@@ -25,8 +25,8 @@ library(kableExtra)
 #data wrangling
 # Import Data -------------------------------------------------------------
 
-runs <- read_csv("runs.csv")
-races <- read_csv("races.csv")
+runs <- read_csv("..\\data\\runs.csv")
+races <- read_csv("..\\data\\races.csv")
 
 
 # Join --------------------------------------------------------------------
@@ -58,9 +58,10 @@ wincomb_cols <- paste0("win_combination",1:2)
 for (col in c(place_cols, position_cols)) {
   whole[[col]] <- as.character(whole[[col]])
 }
+
+set.seed(510)
+horses <- slice_sample(whole, n=10000)
 ```
-
-
 
 ```{r}
 #Distribution of winning
@@ -72,7 +73,19 @@ whole %>%
   xlab("Won")+
   ylab("Count")+
   theme_few()
+
+avg_no_horses_per_race <- runs %>% 
+  group_by(race_id) %>% 
+  summarise(horses_per_race = max(horse_no)) %>% 
+  summarise(avg = mean(horses_per_race)) %>% 
+  pull
 ```
+
+The average number of horses per race is `r round(avg_no_horses_per_race, 2)`. On average the chance odds against winning are $\frac{1-p}{p}=\frac{11.65}{1}$, so $11.65:1$. Even though there is $\approx 0.079$  chance of winning, with `r sum(horses$won)` wins in our 10,000 training data we satisfy the one in ten rule.
+
+\newpage
+
+
 ```{r warning=FALSE, message=FALSE}
 #Distribution of Horse weight and jockey weight
 ph <- whole %>% 
