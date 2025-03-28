@@ -2,7 +2,7 @@ Models
 
 1. General model with the 8000 random sampled rows
 
-2. Model where we oversample wins
+2. Model where we oversample wins -> according to internet we are fine. 1/12 is not a rare event 
 
 3. Model for betting to win (this means we can only use variables we know before the race starts)
 
