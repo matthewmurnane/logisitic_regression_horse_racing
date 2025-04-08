@@ -1,17 +1,18 @@
-
 library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(readr)
+library(car)
 # Import Data -------------------------------------------------------------
 
-runs <- read_csv("runs.csv")
-races <- read_csv("races.csv")
+runs <- read_csv("data/runs.csv")
+races <- read_csv("data/races.csv")
 
 
 # Join --------------------------------------------------------------------
 
-whole <- inner_join(runs, races, by="race_id")
+whole <- inner_join(runs, races, by="race_id") %>% 
+  select(!c(horse_id, race_id, time7, sec_time7))
 
 # Glimpse -----------------------------------------------------------------
 
@@ -20,7 +21,7 @@ glimpse(whole)
 # Changing Data Classes ---------------------------------------------------
 
 whole$horse_no <- as.factor(whole$horse_no)
-whole$won <- as.logical(whole$won)
+whole$won <- as.factor(whole$won)
 whole$horse_ratings <- as.factor(whole$horse_ratings)
 whole$draw <- as.factor(whole$draw)
 whole$jockey_id <- as.factor(whole$jockey_id)
@@ -42,11 +43,15 @@ glimpse(whole)
 
 
 
-# Sample Data -------------------------------------------------------------
+# Data For Modeling -------------------------------------------------------------
 
+pre_race_vars <- c("won", "horse_no", "horse_age", "horse_country", "horse_type",
+                   "horse_rating","horse_gear", "declared_weight", "draw", "trainer_id", "jockey_id", "win_odds", 
+                   "place_odds", "date", "venue", "race_no", "config", "surface", "distance",
+                   "going", "horse_ratings", "prize", "race_class")
 set.seed(510)
-horses <- slice_sample(whole, n=10000)
-
+strategy <- slice_sample(whole, n=10000) %>% 
+  select(all_of(pre_race_vars))
 
 
 # Check Representativeness ------------------------------------------------
