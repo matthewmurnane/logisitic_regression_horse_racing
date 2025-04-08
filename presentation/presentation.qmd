@@ -17,8 +17,8 @@ library(kableExtra)
 
 ```{r}
 
-runs <- read_csv("..\\data\\runs.csv")
-races <- read_csv("..\\data\\races.csv")
+runs <- read_csv("../data/runs.csv")
+races <- read_csv("../data/races.csv")
 
 # Join --------------------------------------------------------------------
 

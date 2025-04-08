@@ -22,8 +22,8 @@ library(kableExtra)
 #data wrangling
 # Import Data -------------------------------------------------------------
 
-runs <- read_csv("..\\data\\runs.csv")
-races <- read_csv("..\\data\\races.csv")
+runs <- read_csv("./data/runs.csv")
+races <- read_csv("./data/races.csv")
 
 
 # Join --------------------------------------------------------------------
