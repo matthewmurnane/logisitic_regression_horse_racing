@@ -61,7 +61,7 @@ kable(head(whole)) %>%
   kable_styling(font_size = 15, full_width = FALSE)
 ```
 
-## Pre-race Variables
+## Pre-Race Variables
 
 ```{r}
 pre_race_vars <- matrix(c(
