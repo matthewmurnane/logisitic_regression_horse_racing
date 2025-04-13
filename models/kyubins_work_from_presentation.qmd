@@ -1,0 +1,194 @@
+---
+title: "Kyubin's work"
+format: pdf
+---
+
+Kyubin's work I had to migrate here from the presentation qmd so that I could run/clean up the presentation qmd.
+
+## Kyubin's Edit: START 
+
+```{r}
+
+set.seed(510)
+horses <- slice_sample(whole, n=10000)
+
+horses %>% 
+  summarise(total_wins = sum(won),
+            proportion_wins = sum(won)/n())
+
+sum(horses$won) / (ncol(whole)-8) > 15
+
+```
+
+## Clean Missing Values
+
+```{r}
+
+horses <- read_csv("C:/Users/imkyu/OneDrive/Desktop/horses.csv", col_names=TRUE)
+
+# Remove all-NA columns
+horses_clean <- horses[, colSums(!is.na(horses)) > 0]
+
+# Remove columns with only one unique value (excluding NAs) as glm can not run
+horses_clean <- horses_clean[, sapply(horses_clean, function(x) length(unique(na.omit(x))) > 1)]
+
+# Ensure characters are converted to factors
+horses_clean <- horses_clean %>%
+  mutate(across(where(is.character), as.factor))
+
+# Remove factors with fewer than 2 levels
+horses_clean <- horses_clean[, !sapply(horses_clean, function(x) is.factor(x) && nlevels(x) < 2)]
+
+# Drop columns with >30% NAs: went from 73 to 57 columns
+horses_clean <- horses_clean %>%
+  select(where(~ mean(is.na(.)) <= 0.30))
+
+# Drop variables race_id, horse_no, horse_id, result, lengths_behind
+horses_clean <- horses_clean %>% select(-race_id, -horse_no,-horse_id, -result, -lengths_behind)
+
+# Run model to see if the model works with our data
+# It does run but our x matrix seems extremely singular: need to reduce multicollinearity
+full_horses <- glm(won ~ ., data = horses_clean, family = binomial)
+
+summary(full_horses)
+
+```
+
+## Preliminary glm models
+
+```{r}
+
+## alpha is set to 0.05
+
+## 1: Let's try to run about 4 numerical variables we might believe we want to consider as a foundation
+# Even using variables after dropping heavy missing columns we still can not get our alg to converge
+I_four_horses <- glm(won ~ horse_age + horse_rating + actual_weight + win_odds, data = horses_clean, family = binomial)
+
+# Coefficients:
+#              Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)   -2.649926   0.811720  -3.265   0.0011 ** 
+#horse_age     -0.047741   0.048325  -0.988   0.3232    
+#horse_rating   0.003537   0.003024   1.170   0.2421    
+#actual_weight  0.010793   0.006320   1.708   0.0877 .  
+#win_odds      -0.077308   0.004942 -15.642   <2e-16 ***
+summary(I_four_horses)
+
+## 2: + horse_country
+II_five_horses <- glm(won ~ horse_age + horse_rating + actual_weight + win_odds + horse_country, data = horses_clean, family = binomial)
+
+# None of the countries is significant: only win_odds are significant
+summary(II_five_horses)
+
+## 3: + horse_type
+III_five_horses <- glm(won ~ horse_age + horse_rating + actual_weight + win_odds + horse_type, data = horses_clean, family = binomial)
+
+# None of the horse_types is significant: only win_odds are significant
+summary(III_five_horses)
+
+## Bottom line is that we will absolutely take win_odds as a variable
+```
+
+## Logical Variable Selection: Human intuition
+
+```{r}
+
+## I believe we need to drop more variables from horses_clean
+
+## 1: horse_age + horse_rating + actual_weight + draw + time1.x + time2.x + time3.x + win_odds, race_class, data = horses_clean
+all_logical_horses <- glm(won ~ horse_age + horse_rating + actual_weight + draw + time1.x + time2.x + time3.x + win_odds, race_class, data = horses_clean, family = binomial)
+
+# Result:
+#Coefficients:
+#                Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)    3.9603861  0.7128313   5.556 2.76e-08 ***
+#horse_age     -0.0269378  0.0238156  -1.131 0.258014    
+#horse_rating   0.0029321  0.0012598   2.327 0.019939 *  
+#actual_weight  0.0171995  0.0033310   5.164 2.42e-07 ***
+#draw          -0.0221521  0.0053812  -4.117 3.85e-05 ***
+#time1.x        0.0001595  0.0045047   0.035 0.971748    
+#time2.x        0.1100944  0.0312538   3.523 0.000427 ***
+#time3.x       -0.4149551  0.0284699 -14.575  < 2e-16 ***
+#win_odds      -0.0756192  0.0025416 -29.752  < 2e-16 ***
+#AIC: 18719
+summary(all_logical_horses)
+
+## 2: Drop time1.x and horse_age
+all_logical_horses_two <- glm(won ~ horse_rating + actual_weight + draw + time2.x + time3.x + win_odds, race_class, data = horses_clean, family = binomial)
+
+# Result:
+#Coefficients:
+#               Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)    3.920059   0.684826   5.724 1.04e-08 ***
+#horse_rating   0.002757   0.001240   2.223   0.0262 *  
+#actual_weight  0.017163   0.003330   5.154 2.55e-07 ***
+#draw          -0.022029   0.005380  -4.095 4.23e-05 ***
+#time2.x        0.109181   0.023345   4.677 2.91e-06 ***
+#time3.x       -0.415340   0.027434 -15.140  < 2e-16 ***
+#win_odds      -0.075792   0.002541 -29.827  < 2e-16 ***
+#AIC: 18716
+summary(all_logical_horses_two)
+
+```
+
+## Forward Selection
+
+```{r}
+
+full_scope <- formula(glm(won ~ ., data = horses_clean, family = binomial))
+model_forward <- step(glm(won ~ 1, data = horses_clean, family = binomial), scope = full_scope, direction = "forward")
+summary(model_forward)
+
+# Suggested glm(formula = won ~ position_sec3 + win_odds + behind_sec2 + 
+#    actual_weight + venue + win_dividend1 + time3.x + sec_time3 + 
+#    distance + finish_time + race_no + time2.x + sec_time1 + 
+#    position_sec1 + race_class + date + behind_sec3 + horse_rating + 
+#    jockey_id, family = binomial, data = horses_clean)
+
+fs_model <- glm(formula = won ~ position_sec3 + win_odds + behind_sec2 + 
+   actual_weight + venue + win_dividend1 + time3.x + sec_time3 + 
+   distance + finish_time + race_no + time2.x + sec_time1 + 
+   position_sec1 + race_class + date + behind_sec3 + horse_rating + 
+   jockey_id, family = binomial, data = horses_clean)
+summary(fs_model)
+
+# jockey_id not significant, date is meaningless, finish_time is very correlated with won
+
+```
+
+## Cleaned Model
+
+```{r}
+
+## 1: Remove variables mentioned by: # jockey_id not significant, date is meaningless, finish_time is very correlated with won
+#Coefficients:
+#                Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)    4.3681503  2.3376047   1.869 0.061672 .  
+#position_sec3 -0.2260591  0.0305641  -7.396 1.40e-13 ***
+#win_odds      -0.0570546  0.0046749 -12.205  < 2e-16 ***
+#behind_sec2   -0.1764638  0.0488997  -3.609 0.000308 ***
+#actual_weight  0.0181293  0.0067470   2.687 0.007209 ** 
+#venueST        0.0562314  0.0981178   0.573 0.566576    
+#win_dividend1  0.0004769  0.0003106   1.536 0.124650    
+#time3.x       -2.7133955  0.2969086  -9.139  < 2e-16 ***
+#sec_time3      2.3785840  0.2911229   8.170 3.07e-16 ***
+#distance       0.0013508  0.0002759   4.896 9.80e-07 ***
+#time2.x       -0.0250327  0.0811402  -0.309 0.757693    
+#sec_time1     -0.0044070  0.0102541  -0.430 0.667354    
+#position_sec1 -0.0053030  0.0215998  -0.246 0.806060    
+#race_class    -0.0134053  0.0199362  -0.672 0.501321    
+#behind_sec3    0.0164314  0.0027618   5.950 2.69e-09 ***
+#horse_rating  -0.0017503  0.0032370  -0.541 0.588712
+final_model <- glm(formula = won ~ position_sec3 + win_odds + behind_sec2 + 
+   actual_weight + venue + win_dividend1 + time3.x + sec_time3 + 
+   distance + time2.x + sec_time1 + 
+   position_sec1 + race_class + behind_sec3 + horse_rating, family = binomial, data = horses_clean)
+summary(final_model)
+
+## 2: Narrowed down to significant variables only
+final_model <- glm(formula = won ~ position_sec3 + win_odds + behind_sec2 + 
+   actual_weight + time3.x + sec_time3 + 
+   distance + behind_sec3, family = binomial, data = horses_clean)
+summary(final_model)
+
+## The overall interpretation is that horses that are able to hold strong positions towards the last half of the race is more likely to win. Also the farther the distance of the race the more your odds of winning. Lastly, it might be prudent to trust the win_odds as it is relatively accurate.
+```

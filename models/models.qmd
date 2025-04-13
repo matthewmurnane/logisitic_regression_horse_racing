@@ -1,0 +1,165 @@
+---
+title: "Models"
+format: pdf
+---
+
+### Strategy Model: A Logistic Regression Model on Variables Known Before the Race Begins
+
+```{r}
+pre_race_vars <- c("won", "horse_age", "horse_country", "horse_type", "horse_rating",
+                   "horse_gear", "declared_weight", "draw", "trainer_id", "jockey_id",
+                   "win_odds","place_odds", "distance")
+
+set.seed(510)
+training_strategy <- slice_sample(whole, n=10000) %>% 
+  select(all_of(pre_race_vars))
+```
+
+```{r}
+full_model <- summary(glm(won~., family = "binomial", data = training_strategy))
+```
+```{r}
+coefs <- as.data.frame(full_model$coefficients)
+signif_coefs <- coefs[coefs$`Pr(>|z|)` < 0.05, ]
+
+result <- data.frame(
+  variable = rownames(signif_coefs),
+  coefficient = signif_coefs$Estimate,
+  std_error = signif_coefs$`Std. Error`,
+  p_value = signif_coefs$`Pr(>|z|)`
+)
+
+rownames(result) <- NULL
+
+print(result)
+```
+
+### Matt's "Gut" Feeling Model
+
+```{r}
+gut_feeling <- glm(won~declared_weight+horse_type+horse_age+draw+win_odds,
+                   data = testing_strategy,
+                   family = "binomial")
+summary(gut_feeling)
+```
+
+### Models Dependent on Distance
+
+```{r}
+training_whole <- whole %>% 
+  select(all_of(pre_race_vars))
+```
+
+
+```{r}
+distances <- unique(training_whole$distance)
+
+distance_models <- list()
+
+for (d in distances) {
+  subset_data <- testing_strategy_whole %>% 
+    filter(distance == d) %>% 
+    select(!c(distance)) %>% 
+    slice_sample(n=8000)
+  
+  num_events <- sum(subset_data$won == 1)
+  if (num_events < 10 * 5) next
+
+  model <- glm(won ~ ., family = "binomial", data = subset_data)
+  
+  distance_models[[as.character(d)]] <- model
+}
+```
+```{r}
+all_vars <- unique(unlist(
+  lapply(distance_models, function(model) rownames(summary(model)$coefficients))
+))
+
+signif_matrix <- matrix(FALSE, nrow = length(all_vars), ncol = length(distance_models))
+rownames(signif_matrix) <- all_vars
+colnames(signif_matrix) <- names(distance_models)
+
+for (dist in names(distance_models)) {
+  model <- distance_models[[dist]]
+  coef_summary <- summary(model)$coefficients
+  signif_vars <- rownames(coef_summary)[coef_summary[, 4] < 0.05]  # p < 0.05
+  signif_matrix[signif_vars, dist] <- TRUE
+}
+
+signif_df <- as.data.frame(signif_matrix)
+
+ordered_distances <- c("1000", "1200", "1400", "1600", "1650", "1800","2000", "2200")
+
+signif_df <- signif_df[, ordered_distances]
+signif_df
+```
+```{r}
+always_significant <- rownames(signif_df)[apply(signif_df, 1, all)]
+always_significant
+```
+
+There is not a single coefficient that is significant across race distances. Not even `win_odds`.
+
+```{r}
+signif_df["win_odds", ]
+```
+
+### Grouping Distances: Short, Medium, Long
+
+```{r}
+training_dist <- whole %>% 
+  select(all_of(pre_race_vars)) %>% 
+  mutate(
+    type = case_when(
+      distance %in% c(1000, 1200, 1400) ~ "short",
+      distance %in% c(1600, 1650, 1800, 2000) ~ "medium",
+      distance %in% c(2200, 2400) ~ "long"))
+```
+
+```{r}
+distances <- unique(training_dist$type)
+
+distance_models <- list()
+
+for (d in distances) {
+  subset_data <- training_dist %>% 
+    filter(type == d) %>% 
+    select(!c(type)) %>% 
+    slice_sample(n=8000)
+  
+  num_events <- sum(subset_data$won == 1)
+  if (num_events < 10 * 5) next
+
+  model <- glm(won ~ ., family = "binomial", data = subset_data)
+  
+  distance_models[[as.character(d)]] <- model
+}
+```
+
+```{r}
+all_vars <- unique(unlist(
+  lapply(distance_models, function(model) rownames(summary(model)$coefficients))
+))
+
+signif_matrix <- matrix(FALSE, nrow = length(all_vars), ncol = length(distance_models))
+rownames(signif_matrix) <- all_vars
+colnames(signif_matrix) <- names(distance_models)
+
+for (dist in names(distance_models)) {
+  model <- distance_models[[dist]]
+  coef_summary <- summary(model)$coefficients
+  signif_vars <- rownames(coef_summary)[coef_summary[, 4] < 0.05]  # p < 0.05
+  signif_matrix[signif_vars, dist] <- TRUE
+}
+
+signif_df <- as.data.frame(signif_matrix)
+
+signif_df
+```
+
+```{r}
+always_significant <- rownames(signif_df)[apply(signif_df, 1, all)]
+always_significant
+```
+
+
