@@ -8,7 +8,6 @@ library(car)
 runs <- read_csv("data/runs.csv")
 races <- read_csv("data/races.csv")
 
-
 # Join --------------------------------------------------------------------
 
 whole <- inner_join(runs, races, by="race_id") %>% 
@@ -40,46 +39,3 @@ for (col in c(place_cols, position_cols)) {
 }
 
 glimpse(whole)
-
-
-
-# Data For Modeling -------------------------------------------------------------
-
-pre_race_vars <- c("won", "horse_no", "horse_age", "horse_country", "horse_type",
-                   "horse_rating","horse_gear", "declared_weight", "draw", "trainer_id", "jockey_id", "win_odds", 
-                   "place_odds", "date", "venue", "race_no", "config", "surface", "distance",
-                   "going", "horse_ratings", "prize", "race_class")
-set.seed(510)
-strategy <- slice_sample(whole, n=10000) %>% 
-  select(all_of(pre_race_vars))
-
-
-# Check Representativeness ------------------------------------------------
-
-p1 <- ggplot(whole, aes(x = won)) +
-  geom_bar(fill = "steelblue") +
-  ggtitle("Distribution of Won in whole_runs") +
-  xlab("Won") +
-  ylab("Count") +
-  theme_minimal()
-
-p2 <- ggplot(horses, aes(x = won)) +
-  geom_bar(fill = "darkred") +
-  ggtitle("Distribution of Won in horses (Sampled Data)") +
-  xlab("Won") +
-  ylab("Count") +
-  theme_minimal()
-
-grid.arrange(p1,p2)
-
-
-# Rare Events -------------------------------------------------------------
-
-horses %>% 
-  summarise(total_wins = sum(won),
-            proportion_wins = sum(won)/n())
-
-sum(horses$won) / (ncol(whole)-8) > 10
-
-
-
